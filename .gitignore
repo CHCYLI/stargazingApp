@@ -1,0 +1,48 @@
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ===== Secrets / Env =====
+.env
+.env.*
+!.env.example
+
+# ===== .NET / ASP.NET =====
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ===== EF / SQLite DB =====
+*.db
+*.db-shm
+*.db-wal
+
+# ===== Logs =====
+**/logs/
+*.log
+
+# ===== iOS / Xcode =====
+**/DerivedData/
+**/*.xcworkspace
+**/*.xcuserstate
+**/xcuserdata/
+**/*.moved-aside
+**/*.xccheckout
+**/*.xcscmblueprint
+**/Pods/
+**/*.ipa
+
+# SwiftPM
+**/.build/
+**/Package.resolved
+
+# ===== Build Artifacts =====
+*.zip
+*.tar.gz
