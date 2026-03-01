@@ -24,7 +24,6 @@ public class WeatherService : IWeatherService
         _db = db;
         _http = http;
 
-        // .env: WEATHER_CACHE_TTL_MINUTES=120
         var ttlMin = cfg.GetValue<int?>("WEATHER_CACHE_TTL_MINUTES") ?? 120;
         _ttl = TimeSpan.FromMinutes(Math.Clamp(ttlMin, 10, 720));
     }
@@ -37,21 +36,25 @@ public class WeatherService : IWeatherService
         var now = DateTimeOffset.UtcNow;
         var start = GeoBucket.FloorToHourUtc(now);
         var end = start.AddHours(hours);
-
-        // 1) Try cache
-        var cached = await _db.ForecastHourlyCache
-            .Where(x => x.LatBucket == latB && x.LonBucket == lonB && x.Time >= start && x.Time < end)
-            .OrderBy(x => x.Time)
+        var bucketRows = await _db.ForecastHourlyCache
+            .Where(x => x.LatBucket == latB && x.LonBucket == lonB)
             .ToListAsync(ct);
+
+        var cached = bucketRows
+            .Where(x => x.Time >= start && x.Time < end)
+            .OrderBy(x => x.Time)
+            .ToList();
 
         var fresh = cached.Count == hours && cached.All(x => (now - x.FetchedAt) <= _ttl);
 
         if (fresh)
         {
-            return cached.Select(x => new WeatherHour(x.Time, x.CloudCover, x.PrecipProb, x.WindSpeed, x.Humidity)).ToList();
+            return cached
+                .Select(x => new WeatherHour(x.Time, x.CloudCover, x.PrecipProb, x.WindSpeed, x.Humidity))
+                .ToList();
         }
 
-        // 2) Fetch Open-Meteo
+        // --- Fetch Open-Meteo ---
         var url =
             "https://api.open-meteo.com/v1/forecast" +
             $"?latitude={lat}&longitude={lon}" +
@@ -67,7 +70,9 @@ public class WeatherService : IWeatherService
 
         var hourly = doc.RootElement.GetProperty("hourly");
 
-        var times = hourly.GetProperty("time").EnumerateArray().Select(e => DateTimeOffset.Parse(e.GetString()!)).ToList();
+        var times = hourly.GetProperty("time").EnumerateArray()
+            .Select(e => DateTimeOffset.Parse(e.GetString()!)).ToList();
+
         var cloud = hourly.GetProperty("cloudcover").EnumerateArray().Select(e => e.GetInt32()).ToList();
         var precip = hourly.GetProperty("precipitation_probability").EnumerateArray().Select(e => e.GetInt32()).ToList();
         var wind = hourly.GetProperty("windspeed_10m").EnumerateArray().Select(e => e.GetDouble()).ToList();
@@ -80,12 +85,11 @@ public class WeatherService : IWeatherService
             selected.Add(new WeatherHour(times[i], cloud[i], precip[i], wind[i], hum[i]));
         }
 
-        // 3) Upsert cache segment
-        var old = await _db.ForecastHourlyCache
-            .Where(x => x.LatBucket == latB && x.LonBucket == lonB && x.Time >= start && x.Time < end)
-            .ToListAsync(ct);
+        var oldRange = bucketRows
+            .Where(x => x.Time >= start && x.Time < end)
+            .ToList();
 
-        _db.ForecastHourlyCache.RemoveRange(old);
+        _db.ForecastHourlyCache.RemoveRange(oldRange);
 
         foreach (var h in selected)
         {
