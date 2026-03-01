@@ -1,18 +1,30 @@
 using DotNetEnv;
-//run .env
+using Microsoft.EntityFrameworkCore;
+using StargazingApi.Data;
+using StargazingApi.Services;
+
+// run .env (more robust)
 static void TryLoadDotEnv()
 {
-   
-    var envPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", ".env"));
-    if (File.Exists(envPath))
+    var cwd = Directory.GetCurrentDirectory();
+
+    var candidates = new[]
     {
-        Env.Load(envPath);
-        Console.WriteLine($"[env] Loaded: {envPath}");
-    }
-    else
+        Path.Combine(cwd, ".env"),
+        Path.GetFullPath(Path.Combine(cwd, "..", ".env")),
+    };
+
+    foreach (var envPath in candidates)
     {
-        Console.WriteLine($"[env] Not found (ok): {envPath}");
+        if (File.Exists(envPath))
+        {
+            Env.Load(envPath);
+            Console.WriteLine($"[env] Loaded: {envPath}");
+            return;
+        }
     }
+
+    Console.WriteLine($"[env] Not found (ok): tried {string.Join(", ", candidates)}");
 }
 
 TryLoadDotEnv();
@@ -23,10 +35,23 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// CORS for iOS dev
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("dev", p => p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 });
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
+{
+    opt.UseSqlite(builder.Configuration.GetConnectionString("Default"));
+});
+
+builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<IWeatherService, WeatherService>();
+builder.Services.AddScoped<ILightPollutionService, LightPollutionService>();
+builder.Services.AddSingleton<IMoonService, MoonService>();
+builder.Services.AddScoped<IStargazingScoreService, StargazingScoreService>();
 
 var app = builder.Build();
 
