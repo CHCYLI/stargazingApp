@@ -51,7 +51,6 @@ public class LightPollutionService : ILightPollutionService
 
         if (hit is null)
         {
-            // MVP：查不到照旧给默认 7
             return new LightPollutionResult(
                 Bortle: 7,
                 BrightnessValue: null,

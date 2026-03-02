@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StargazingApi.Common;
 using StargazingApi.Data;
 using StargazingApi.Domain.Entities;
+using System.Globalization;
 
 namespace StargazingApi.Services;
 
@@ -71,7 +72,9 @@ public class WeatherService : IWeatherService
         var hourly = doc.RootElement.GetProperty("hourly");
 
         var times = hourly.GetProperty("time").EnumerateArray()
-            .Select(e => DateTimeOffset.Parse(e.GetString()!)).ToList();
+            .Select(e => DateTimeOffset.Parse(e.GetString()!, CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal
+        )).ToList(); //ensure all time is the same
 
         var cloud = hourly.GetProperty("cloudcover").EnumerateArray().Select(e => e.GetInt32()).ToList();
         var precip = hourly.GetProperty("precipitation_probability").EnumerateArray().Select(e => e.GetInt32()).ToList();
