@@ -13,19 +13,22 @@ public class FavoritesController : ControllerBase
     private readonly AppDbContext _db;
     public FavoritesController(AppDbContext db) => _db = db;
 
+    // GET /api/favorites
     [HttpGet]
     public async Task<ActionResult<List<FavoriteDto>>> Get(CancellationToken ct)
     {
+        //so sort in memory.
         var rows = await _db.Favorites.AsNoTracking().ToListAsync(ct);
 
         var res = rows
-            .OrderByDescending(x => x.CreatedAt) // ✅ in-memory sort (SQLite + DateTimeOffset safer)
+            .OrderByDescending(x => x.CreatedAt)
             .Select(x => new FavoriteDto(x.Id, x.Name, x.Lat, x.Lon, x.CreatedAt))
             .ToList();
 
         return Ok(res);
     }
 
+    // POST /api/favorites
     [HttpPost]
     public async Task<ActionResult<FavoriteDto>> Create([FromBody] CreateFavoriteRequest req, CancellationToken ct)
     {
@@ -33,13 +36,21 @@ public class FavoritesController : ControllerBase
         if (req.Lon is < -180 or > 180) return BadRequest("lon out of range");
         if (string.IsNullOrWhiteSpace(req.Name)) return BadRequest("name required");
 
-        var f = new Favorite { Name = req.Name.Trim(), Lat = req.Lat, Lon = req.Lon };
+        var f = new Favorite
+        {
+            Name = req.Name.Trim(),
+            Lat = req.Lat,
+            Lon = req.Lon,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
         _db.Favorites.Add(f);
         await _db.SaveChangesAsync(ct);
 
         return Ok(new FavoriteDto(f.Id, f.Name, f.Lat, f.Lon, f.CreatedAt));
     }
 
+    // DELETE /api/favorites/{id}
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
