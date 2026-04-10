@@ -7,7 +7,7 @@ Stargazing App is a .NET 8 backend API for calculating stargazing conditions by 
 - light pollution metadata,
 - and a simple scoring model.
 
-The repo currently contains a backend API and an `ios/` directory placeholder.
+The repo currently contains a backend API and an `android/` directory placeholder.
 
 ## Tech Stack
 
@@ -25,7 +25,7 @@ The repo currently contains a backend API and an `ios/` directory placeholder.
 │  ├─ .env.example                 # local env template
 │  ├─ run.ps1                      # Windows run script
 │  └─ run.sh                       # macOS/Linux run script
-├─ ios/                            # currently empty placeholder
+├─ android/                            # currently empty placeholder
 ├─ stargazingApp.sln
 └─ global.json
 ```
@@ -163,6 +163,6 @@ Note: there is currently a test project scaffold, but no implemented test cases 
 
 ## Current Status Notes
 
-- `ios/` exists but is currently empty.
+- `android/` exists but is currently empty.
 - A light-pollution seeder file exists but is not yet wired into startup flow.
 
