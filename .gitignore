@@ -46,3 +46,10 @@ Thumbs.db
 # ===== Build Artifacts =====
 *.zip
 *.tar.gz
+
+# ===== Android / Gradle =====
+**/.gradle/
+**/build/
+android/**/local.properties
+android/**/.idea/
+**/*.iml
